@@ -113,18 +113,24 @@ function InterviewStage({ caseLabel }: { caseLabel: string }) {
   const tracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: true }]);
   const localTrack = tracks.find((t) => t.participant.isLocal);
 
-  // LISTENER: Waits for signals from Python
+// --- DEBUG LISTENER (Replaces the block above) ---
   useDataChannel((payload) => {
-    const text = new TextDecoder().decode(payload.payload);
-    const data = JSON.parse(text);
+    try {
+      const text = new TextDecoder().decode(payload.payload);
+      console.log("🚀 RECEIVED DATA FROM PYTHON:", text); // <--- THIS LOG IS WHAT WE NEED
 
-    if (data.type === "STATUS") {
-      // 1. Brian heard the voice command ("Generating Feedback...")
-      setIsGenerating(true);
-    } else if (data.score) {
-      // 2. The Feedback JSON arrived -> Switch to Report Card
-      setIsGenerating(false);
-      setFeedback(data);
+      const data = JSON.parse(text);
+
+      if (data.type === "STATUS") {
+        console.log("✅ STATUS RECEIVED: Generating...");
+        setIsGenerating(true);
+      } else if (data.score) {
+        console.log("✅ REPORT CARD RECEIVED:", data);
+        setIsGenerating(false);
+        setFeedback(data);
+      }
+    } catch (error) {
+      console.error("❌ FAILED TO PARSE DATA:", error);
     }
   });
 
@@ -177,7 +183,7 @@ function InterviewStage({ caseLabel }: { caseLabel: string }) {
       <div className="flex flex-col items-center gap-4">
         <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 mb-2">
           <p className="text-xs font-bold text-amber-700 uppercase tracking-wide text-center">
-            Please do not turn on your mic until after the interviewer is finished introducing the case. Feel free to turn on your camera anytime though.
+            It may take 5-10 seconds for the interviewer to load. Please do not turn on your mic until after the interviewer is finished introducing the case.
           </p>
         </div>
         <div className="bg-white p-1 rounded-2xl border border-slate-200 shadow-lg">
