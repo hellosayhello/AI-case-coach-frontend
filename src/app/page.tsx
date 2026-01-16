@@ -83,6 +83,11 @@ function InterviewStage({ caseLabel }: { caseLabel: string }) {
 
       {/* Control Area */}
       <div className="flex flex-col items-center gap-4">
+	<div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 mb-2">
+          <p className="text-xs font-bold text-amber-700 uppercase tracking-wide text-center">
+            Please do not turn on your mic until after the interviewer is finished introducing the case
+          </p>
+        </div>
         <div className="bg-white p-1 rounded-2xl border border-slate-200 shadow-lg">
           <ControlBar variation="minimal" />
         </div>
@@ -141,8 +146,8 @@ export default function InterviewPage() {
   // 2. If token exists, show the Room (Exact UI as before)
   return (
     <LiveKitRoom
-      video={true}
-      audio={true}
+      video={false}
+      audio={false}
       token={token}
       serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
       data-lk-theme="light"
