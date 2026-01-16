@@ -71,7 +71,7 @@ function InterviewStage({ caseLabel }: { caseLabel: string }) {
         {/* Camera Feed as Background */}
         {localTrack && (
           <div className="absolute inset-0 w-full h-full">
-            <VideoTrack trackRef={localTrack} />
+            <VideoTrack trackRef={localTrack as any} />
           </div>
         )}
 
