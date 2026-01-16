@@ -58,7 +58,7 @@ function InterviewStage({ caseLabel }: { caseLabel: string }) {
       <InterviewTimer />
       
       <h1 className="text-3xl font-bold text-slate-900 mb-2 text-center tracking-tight">
-        AItimate Interview Presented by HJ
+        AItimate Interview
       </h1>
       {/* This is now dynamic based on selection */}
       <p className="text-slate-500 mb-12 text-center font-medium">
@@ -117,7 +117,7 @@ export default function InterviewPage() {
   if (!token) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-12">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">AItimate Interview Presented by HJ</h1>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">AItimate Interview</h1>
         <p className="text-slate-500 mb-12 font-medium">Choose an industry to begin your mock interview</p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
