@@ -78,7 +78,7 @@ function FeedbackCard({ data }: { data: FeedbackData }) {
   );
 }
 
-// --- COMPONENT: The Interview Timer ---
+// --- SUB-COMPONENT: The Interview Timer ---
 function InterviewTimer() {
   const [seconds, setSeconds] = useState(0);
 
@@ -105,43 +105,30 @@ function InterviewTimer() {
   );
 }
 
-// --- COMPONENT: The Main Stage (Video + Controls) ---
+// --- SUB-COMPONENT: The Interview Stage ---
 function InterviewStage({ caseLabel }: { caseLabel: string }) {
-  const room = useRoomContext(); 
-  
-  // State for logic
   const [feedback, setFeedback] = useState<FeedbackData | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [canEnd, setCanEnd] = useState(false); // Controls button visibility
-  
-  // Video Tracks
+
   const tracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: true }]);
   const localTrack = tracks.find((t) => t.participant.isLocal);
 
-  // Listen for Signals from Python (Backend)
+  // LISTENER: Waits for signals from Python
   useDataChannel((payload) => {
     const text = new TextDecoder().decode(payload.payload);
     const data = JSON.parse(text);
 
     if (data.type === "STATUS") {
+      // 1. Brian heard the voice command ("Generating Feedback...")
       setIsGenerating(true);
     } else if (data.score) {
-      // Feedback received
+      // 2. The Feedback JSON arrived -> Switch to Report Card
       setIsGenerating(false);
       setFeedback(data);
-    } else if (data.type === "ENABLE_END_BUTTON") {
-      // Python says Phase 3 is done -> Show button
-      setCanEnd(true);
     }
   });
 
-  const handleEndInterview = () => {
-    setIsGenerating(true);
-    const strData = new TextEncoder().encode("GENERATE_FEEDBACK");
-    room.localParticipant.publishData(strData, { reliable: true });
-  };
-
-  // 1. SHOW FEEDBACK CARD (If interview ended)
+  // VIEW 1: SHOW FEEDBACK CARD (If feedback exists)
   if (feedback) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4 w-full">
@@ -150,17 +137,17 @@ function InterviewStage({ caseLabel }: { caseLabel: string }) {
     );
   }
 
-  // 2. SHOW LOADING STATE (Calculating grades)
+  // VIEW 2: SHOW LOADING (If Brian is thinking)
   if (isGenerating) {
     return (
       <div className="flex flex-col items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900 mb-4"></div>
-        <p className="text-slate-500 font-medium animate-pulse">Analyzing transcript & checking math...</p>
+        <p className="text-slate-500 font-medium animate-pulse">Brian is analyzing your performance...</p>
       </div>
     );
   }
 
-  // 3. SHOW INTERVIEW ROOM (Active)
+  // VIEW 3: STANDARD INTERVIEW ROOM (Default)
   return (
     <div className="flex flex-col items-center justify-center w-full max-w-lg">
       <InterviewTimer />
@@ -172,39 +159,28 @@ function InterviewStage({ caseLabel }: { caseLabel: string }) {
         {caseLabel}
       </p>
       
-      {/* Video Circle */}
+      {/* Central Circular Interface */}
       <div className="relative flex items-center justify-center h-64 w-64 mx-auto mb-12 bg-slate-100 rounded-full border border-slate-200 shadow-xl overflow-hidden ring-8 ring-white">
+        
         {localTrack && (
           <div className="absolute inset-0 w-full h-full">
             <VideoTrack trackRef={localTrack as any} />
           </div>
         )}
+
         <div className="relative z-10 w-full px-4">
           <BarVisualizer />
         </div>
       </div>
 
-      {/* Controls */}
+      {/* Control Area */}
       <div className="flex flex-col items-center gap-4">
-        
-        {/* Your Custom Warning Message */}
-        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 mb-2 max-w-md">
-          <p className="text-xs font-bold text-amber-700 uppercase tracking-wide text-center leading-relaxed">
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 mb-2">
+          <p className="text-xs font-bold text-amber-700 uppercase tracking-wide text-center">
             Please do not turn on your mic until after the interviewer is finished introducing the case. Feel free to turn on your camera anytime though.
           </p>
         </div>
-
-        {/* END BUTTON - Only visible when Python sends "ENABLE_END_BUTTON" */}
-        {canEnd && (
-          <button
-            onClick={handleEndInterview}
-            className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-full font-bold shadow-lg transition-all transform hover:scale-105 animate-in fade-in slide-in-from-bottom-4"
-          >
-            End Interview and Review Feedback
-          </button>
-        )}
-
-        <div className="bg-white p-1 rounded-2xl border border-slate-200 shadow-lg mt-4">
+        <div className="bg-white p-1 rounded-2xl border border-slate-200 shadow-lg">
           <ControlBar variation="minimal" />
         </div>
         <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black">
@@ -225,7 +201,7 @@ export default function InterviewPage() {
     try {
       const response = await fetch("/api/token", {
         method: "POST",
-        body: JSON.stringify({ caseId }),
+        body: JSON.stringify({ caseId }), 
       });
       const data = await response.json();
       setToken(data.token);
@@ -260,8 +236,8 @@ export default function InterviewPage() {
 
   return (
     <LiveKitRoom
-      video={false} 
-      audio={false} 
+      video={false}
+      audio={false}
       token={token}
       serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
       data-lk-theme="light"
