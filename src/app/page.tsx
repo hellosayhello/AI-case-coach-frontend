@@ -8,6 +8,8 @@ import {
   ControlBar,
   VideoTrack,
   useTracks,
+  useDataChannel,
+  useRoomContext,
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
 import { useEffect, useState } from "react";
@@ -21,7 +23,62 @@ const INDUSTRIES = [
   { name: "Arts", caseId: "art_museum", label: "NYC Art Museum Turnaround" },
 ];
 
-// --- SUB-COMPONENT: The Interview Timer (Unchanged) ---
+// --- INTERFACE: Feedback Data Structure ---
+interface FeedbackData {
+  score: number;
+  feedback_text: string;
+  buckets: {
+    [key: string]: { score: number; comment: string };
+  };
+}
+
+// --- COMPONENT: The Feedback Report Card ---
+function FeedbackCard({ data }: { data: FeedbackData }) {
+  return (
+    <div className="w-full max-w-2xl bg-white rounded-3xl shadow-xl border border-slate-200 p-8 animate-in fade-in zoom-in duration-500">
+      <div className="flex items-center justify-between mb-8 border-b border-slate-100 pb-6">
+        <div>
+          <h2 className="text-3xl font-bold text-slate-900">Performance Report</h2>
+          <p className="text-slate-500">AI Interviewer Assessment</p>
+        </div>
+        <div className="bg-blue-600 text-white rounded-2xl p-4 flex flex-col items-center min-w-[100px]">
+          <span className="text-4xl font-bold">{data.score}/10</span>
+          <span className="text-xs font-medium uppercase tracking-wider opacity-80">Overall</span>
+        </div>
+      </div>
+
+      <p className="text-slate-600 mb-8 leading-relaxed text-lg">
+        {data.feedback_text}
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {Object.entries(data.buckets).map(([key, bucket]) => (
+          <div key={key} className="bg-slate-50 p-5 rounded-xl border border-slate-100">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="font-bold text-slate-700">{key}</h3>
+              <span className={`px-2 py-1 rounded text-xs font-bold ${
+                bucket.score >= 8 ? 'bg-green-100 text-green-700' : 
+                bucket.score >= 6 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+              }`}>
+                {bucket.score}/10
+              </span>
+            </div>
+            <p className="text-sm text-slate-500">{bucket.comment}</p>
+          </div>
+        ))}
+      </div>
+      
+      <button 
+        onClick={() => window.location.reload()} 
+        className="mt-8 w-full py-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all"
+      >
+        Start New Case
+      </button>
+    </div>
+  );
+}
+
+// --- COMPONENT: The Interview Timer ---
 function InterviewTimer() {
   const [seconds, setSeconds] = useState(0);
 
@@ -48,11 +105,62 @@ function InterviewTimer() {
   );
 }
 
-// --- SUB-COMPONENT: The Interview Stage (Updated to accept dynamic title) ---
+// --- COMPONENT: The Main Stage (Video + Controls) ---
 function InterviewStage({ caseLabel }: { caseLabel: string }) {
+  const room = useRoomContext(); 
+  
+  // State for logic
+  const [feedback, setFeedback] = useState<FeedbackData | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [canEnd, setCanEnd] = useState(false); // Controls button visibility
+  
+  // Video Tracks
   const tracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: true }]);
   const localTrack = tracks.find((t) => t.participant.isLocal);
 
+  // Listen for Signals from Python (Backend)
+  useDataChannel((payload) => {
+    const text = new TextDecoder().decode(payload.payload);
+    const data = JSON.parse(text);
+
+    if (data.type === "STATUS") {
+      setIsGenerating(true);
+    } else if (data.score) {
+      // Feedback received
+      setIsGenerating(false);
+      setFeedback(data);
+    } else if (data.type === "ENABLE_END_BUTTON") {
+      // Python says Phase 3 is done -> Show button
+      setCanEnd(true);
+    }
+  });
+
+  const handleEndInterview = () => {
+    setIsGenerating(true);
+    const strData = new TextEncoder().encode("GENERATE_FEEDBACK");
+    room.localParticipant.publishData(strData, { reliable: true });
+  };
+
+  // 1. SHOW FEEDBACK CARD (If interview ended)
+  if (feedback) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 w-full">
+        <FeedbackCard data={feedback} />
+      </div>
+    );
+  }
+
+  // 2. SHOW LOADING STATE (Calculating grades)
+  if (isGenerating) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900 mb-4"></div>
+        <p className="text-slate-500 font-medium animate-pulse">Analyzing transcript & checking math...</p>
+      </div>
+    );
+  }
+
+  // 3. SHOW INTERVIEW ROOM (Active)
   return (
     <div className="flex flex-col items-center justify-center w-full max-w-lg">
       <InterviewTimer />
@@ -60,35 +168,43 @@ function InterviewStage({ caseLabel }: { caseLabel: string }) {
       <h1 className="text-3xl font-bold text-slate-900 mb-2 text-center tracking-tight">
         Ace Case Interview Room
       </h1>
-      {/* This is now dynamic based on selection */}
       <p className="text-slate-500 mb-12 text-center font-medium">
         {caseLabel}
       </p>
       
-      {/* Central Circular Interface (Light Mode) */}
+      {/* Video Circle */}
       <div className="relative flex items-center justify-center h-64 w-64 mx-auto mb-12 bg-slate-100 rounded-full border border-slate-200 shadow-xl overflow-hidden ring-8 ring-white">
-        
-        {/* Camera Feed as Background */}
         {localTrack && (
           <div className="absolute inset-0 w-full h-full">
             <VideoTrack trackRef={localTrack as any} />
           </div>
         )}
-
-        {/* Visualizer Overlay (Layered on top of video) */}
         <div className="relative z-10 w-full px-4">
           <BarVisualizer />
         </div>
       </div>
 
-      {/* Control Area */}
+      {/* Controls */}
       <div className="flex flex-col items-center gap-4">
-	<div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 mb-2">
-          <p className="text-xs font-bold text-amber-700 uppercase tracking-wide text-center">
-            Please do not turn on your mic until after the interviewer is finished introducing the case
+        
+        {/* Your Custom Warning Message */}
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 mb-2 max-w-md">
+          <p className="text-xs font-bold text-amber-700 uppercase tracking-wide text-center leading-relaxed">
+            Please do not turn on your mic until after the interviewer is finished introducing the case. Feel free to turn on your camera anytime though.
           </p>
         </div>
-        <div className="bg-white p-1 rounded-2xl border border-slate-200 shadow-lg">
+
+        {/* END BUTTON - Only visible when Python sends "ENABLE_END_BUTTON" */}
+        {canEnd && (
+          <button
+            onClick={handleEndInterview}
+            className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-full font-bold shadow-lg transition-all transform hover:scale-105 animate-in fade-in slide-in-from-bottom-4"
+          >
+            End Interview and Review Feedback
+          </button>
+        )}
+
+        <div className="bg-white p-1 rounded-2xl border border-slate-200 shadow-lg mt-4">
           <ControlBar variation="minimal" />
         </div>
         <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black">
@@ -109,7 +225,7 @@ export default function InterviewPage() {
     try {
       const response = await fetch("/api/token", {
         method: "POST",
-        body: JSON.stringify({ caseId }), // Sending the selection to backend
+        body: JSON.stringify({ caseId }),
       });
       const data = await response.json();
       setToken(data.token);
@@ -118,7 +234,6 @@ export default function InterviewPage() {
     }
   };
 
-  // 1. If no token, show the Selection Screen
   if (!token) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-12">
@@ -143,11 +258,10 @@ export default function InterviewPage() {
     );
   }
 
-  // 2. If token exists, show the Room (Exact UI as before)
   return (
     <LiveKitRoom
-      video={false}
-      audio={false}
+      video={false} 
+      audio={false} 
       token={token}
       serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
       data-lk-theme="light"
