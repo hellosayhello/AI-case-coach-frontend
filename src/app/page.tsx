@@ -15,11 +15,12 @@ import { useEffect, useState } from "react";
 
 // --- CONFIGURATION ---
 const INDUSTRIES = [
-  { name: "Sports", caseId: "phighting_phillies", label: "Phighting Phillies Due Diligence" },
-  { name: "Education", caseId: "kellogg_india", label: "Kellogg India Expansion" },
-  { name: "Retail", caseId: "pharmacy_supermarket", label: "Supermarket Pharmacy Investment" },
-  { name: "CPG", caseId: "rotisserie_ranch", label: "Rotisserie Ranch Growth Strategy" },
-  { name: "Arts", caseId: "art_museum", label: "NYC Art Museum Turnaround" },
+  { name: "Sports", caseId: "phighting_phillies", label: "Phighting Phillies Due Diligence", source: "Wharton 2017 Casebook" },
+  { name: "Education", caseId: "kellogg_india", label: "Kellogg India Expansion", source: "Kellogg 2016 Casebook" },
+  { name: "Retail", caseId: "pharmacy_supermarket", label: "Supermarket Pharmacy Investment", source: "Sloan 2011 Casebook" },
+  { name: "CPG", caseId: "rotisserie_ranch", label: "Rotisserie Ranch Growth Strategy", source: "Kellogg 2016 Casebook" },
+  { name: "Arts", caseId: "art_museum", label: "NYC Art Museum Turnaround", source: "Sloan 2011 Casebook" },
+  { name: "Healthcare", caseId: "health_coaches", label: "Health Coaches Disease Management", source: "Kellogg 2016 Casebook" },
 ];
 
 // --- INTERFACES ---
@@ -93,23 +94,29 @@ function InterviewTimer() {
   );
 }
 
-// --- COMPONENT: Graph Display Overlay ---
+// --- COMPONENT: Graph Display Overlay (Updated for multiple graphs) ---
 function GraphOverlay({ 
-  imageUrl, 
-  prompt, 
-  onMinimize 
+  graphs,
+  currentIndex,
+  onMinimize,
+  onNavigate
 }: { 
-  imageUrl: string; 
-  prompt: string;
+  graphs: Array<{ image_url: string; display_prompt: string }>;
+  currentIndex: number;
   onMinimize: () => void;
+  onNavigate: (index: number) => void;
 }) {
+  const currentGraph = graphs[currentIndex];
+  
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-300">
-        <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col">
+        <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
           <div>
-            <h3 className="font-bold text-slate-900">Case Exhibit</h3>
-            <p className="text-sm text-slate-500">{prompt}</p>
+            <h3 className="font-bold text-slate-900">
+              Case Exhibit {currentIndex + 1}{graphs.length > 1 ? ` of ${graphs.length}` : ''}
+            </h3>
+            <p className="text-sm text-slate-500">{currentGraph.display_prompt}</p>
           </div>
           <button 
             onClick={onMinimize}
@@ -121,14 +128,35 @@ function GraphOverlay({
             </svg>
           </button>
         </div>
-        <div className="p-6 bg-white">
+        
+        <div className="p-6 bg-white overflow-y-auto flex-grow">
           <img 
-            src={imageUrl} 
-            alt="Case exhibit"
+            src={currentGraph.image_url} 
+            alt={`Case exhibit ${currentIndex + 1}`}
             className="w-full h-auto rounded-lg border border-slate-200 shadow-sm"
           />
         </div>
-        <div className="bg-blue-50 border-t border-blue-100 px-6 py-3">
+        
+        {/* Navigation tabs for multiple exhibits */}
+        {graphs.length > 1 && (
+          <div className="bg-slate-100 border-t border-slate-200 px-6 py-3 flex gap-2 justify-center flex-shrink-0">
+            {graphs.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => onNavigate(index)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  index === currentIndex
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+                }`}
+              >
+                Exhibit {index + 1}
+              </button>
+            ))}
+          </div>
+        )}
+        
+        <div className="bg-blue-50 border-t border-blue-100 px-6 py-3 flex-shrink-0">
           <p className="text-sm text-blue-700 text-center font-medium">
             Describe what you observe in this exhibit to your interviewer
           </p>
@@ -148,7 +176,7 @@ function MinimizedGraphButton({ onClick }: { onClick: () => void }) {
       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
       </svg>
-      <span className="font-medium">View Exhibit</span>
+      <span className="font-medium">View Exhibits</span>
     </button>
   );
 }
@@ -157,8 +185,11 @@ function MinimizedGraphButton({ onClick }: { onClick: () => void }) {
 function InterviewStage({ caseLabel }: { caseLabel: string }) {
   const [feedback, setFeedback] = useState<FeedbackData | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [graphData, setGraphData] = useState<{ image_url: string; display_prompt: string } | null>(null);
+  
+  // Updated: Now stores an ARRAY of all shown graphs
+  const [shownGraphs, setShownGraphs] = useState<Array<{ image_url: string; display_prompt: string }>>([]);
   const [isGraphExpanded, setIsGraphExpanded] = useState(true);
+  const [currentGraphIndex, setCurrentGraphIndex] = useState(0);
 
   const tracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: true }]);
   const localTrack = tracks.find((t) => t.participant.isLocal);
@@ -174,10 +205,25 @@ function InterviewStage({ caseLabel }: { caseLabel: string }) {
         setIsGenerating(true);
       } else if (data.type === "SHOW_GRAPH") {
         console.log("📊 GRAPH RECEIVED:", data);
-        setGraphData({ image_url: data.image_url, display_prompt: data.display_prompt });
+        
+        // Add new graph to the array (avoid duplicates)
+        setShownGraphs(prev => {
+          const exists = prev.some(g => g.image_url === data.image_url);
+          if (exists) {
+            // If already shown, just navigate to it
+            const existingIndex = prev.findIndex(g => g.image_url === data.image_url);
+            setCurrentGraphIndex(existingIndex);
+            return prev;
+          }
+          // Add new graph and set it as current
+          const newGraphs = [...prev, { image_url: data.image_url, display_prompt: data.display_prompt }];
+          setCurrentGraphIndex(newGraphs.length - 1);
+          return newGraphs;
+        });
+        
         setIsGraphExpanded(true);
       } else if (data.type === "HIDE_GRAPH") {
-        setGraphData(null);
+        setIsGraphExpanded(false);
       } else if (data.score) {
         console.log("✅ REPORT CARD RECEIVED:", data);
         setIsGenerating(false);
@@ -188,7 +234,7 @@ function InterviewStage({ caseLabel }: { caseLabel: string }) {
     }
   });
 
-if (feedback) {
+  if (feedback) {
     return (
       <div className="flex flex-col items-center justify-start min-h-screen p-4 w-full overflow-y-auto">
         <FeedbackCard data={feedback} />
@@ -209,15 +255,18 @@ if (feedback) {
     <div className="flex flex-col items-center justify-center w-full max-w-lg">
       <InterviewTimer />
       
-      {graphData && isGraphExpanded && (
+      {/* Updated: Show overlay with all graphs and navigation */}
+      {shownGraphs.length > 0 && isGraphExpanded && (
         <GraphOverlay 
-          imageUrl={graphData.image_url}
-          prompt={graphData.display_prompt}
+          graphs={shownGraphs}
+          currentIndex={currentGraphIndex}
           onMinimize={() => setIsGraphExpanded(false)}
+          onNavigate={(index) => setCurrentGraphIndex(index)}
         />
       )}
       
-      {graphData && !isGraphExpanded && (
+      {/* Updated: Show button when graphs exist but are minimized */}
+      {shownGraphs.length > 0 && !isGraphExpanded && (
         <MinimizedGraphButton onClick={() => setIsGraphExpanded(true)} />
       )}
       
@@ -264,9 +313,20 @@ export default function InterviewPage() {
     try {
       const response = await fetch("/api/token", {
         method: "POST",
-        body: JSON.stringify({ caseId }), 
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ caseId }),
       });
       const data = await response.json();
+      
+      // DEBUG: Decode and log the token payload
+      try {
+        const payload = JSON.parse(atob(data.token.split('.')[1]));
+        console.log("🎫 TOKEN PAYLOAD:", payload);
+        console.log("📋 METADATA IN TOKEN:", payload.metadata);
+      } catch (decodeError) {
+        console.error("❌ Failed to decode token:", decodeError);
+      }
+      
       setToken(data.token);
     } catch (e) {
       console.error("Token fetch failed:", e);
@@ -289,6 +349,7 @@ export default function InterviewPage() {
                 {ind.name}
               </p>
               <h3 className="text-xl font-semibold text-slate-900">{ind.label}</h3>
+              <p className="text-xs text-slate-400 mt-2">{ind.source}</p>
             </button>
           ))}
         </div>
