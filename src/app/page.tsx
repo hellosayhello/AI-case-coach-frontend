@@ -9,12 +9,11 @@ import {
   VideoTrack,
   useTracks,
   useDataChannel,
-  useRoomContext,
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
 import { useEffect, useState } from "react";
 
-// --- CONFIGURATION: The Available Cases ---
+// --- CONFIGURATION ---
 const INDUSTRIES = [
   { name: "Sports", caseId: "phighting_phillies", label: "Phighting Phillies Due Diligence" },
   { name: "Education", caseId: "kellogg_india", label: "Kellogg India Expansion" },
@@ -23,16 +22,14 @@ const INDUSTRIES = [
   { name: "Arts", caseId: "art_museum", label: "NYC Art Museum Turnaround" },
 ];
 
-// --- INTERFACE: Feedback Data Structure ---
+// --- INTERFACES ---
 interface FeedbackData {
   score: number;
   feedback_text: string;
-  buckets: {
-    [key: string]: { score: number; comment: string };
-  };
+  buckets: { [key: string]: { score: number; comment: string } };
 }
 
-// --- COMPONENT: The Feedback Report Card ---
+// --- COMPONENT: Feedback Report Card ---
 function FeedbackCard({ data }: { data: FeedbackData }) {
   return (
     <div className="w-full max-w-2xl bg-white rounded-3xl shadow-xl border border-slate-200 p-8 animate-in fade-in zoom-in duration-500">
@@ -46,11 +43,7 @@ function FeedbackCard({ data }: { data: FeedbackData }) {
           <span className="text-xs font-medium uppercase tracking-wider opacity-80">Overall</span>
         </div>
       </div>
-
-      <p className="text-slate-600 mb-8 leading-relaxed text-lg">
-        {data.feedback_text}
-      </p>
-
+      <p className="text-slate-600 mb-8 leading-relaxed text-lg">{data.feedback_text}</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {Object.entries(data.buckets).map(([key, bucket]) => (
           <div key={key} className="bg-slate-50 p-5 rounded-xl border border-slate-100">
@@ -67,7 +60,6 @@ function FeedbackCard({ data }: { data: FeedbackData }) {
           </div>
         ))}
       </div>
-      
       <button 
         onClick={() => window.location.reload()} 
         className="mt-8 w-full py-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all"
@@ -78,7 +70,7 @@ function FeedbackCard({ data }: { data: FeedbackData }) {
   );
 }
 
-// --- SUB-COMPONENT: The Interview Timer ---
+// --- COMPONENT: Interview Timer ---
 function InterviewTimer() {
   const [seconds, setSeconds] = useState(0);
 
@@ -95,35 +87,97 @@ function InterviewTimer() {
 
   return (
     <div className="absolute top-8 right-8 bg-white border border-slate-200 px-4 py-2 rounded-full shadow-md z-10">
-      <span className="text-xs text-slate-400 mr-2 uppercase font-bold tracking-tighter">
-        Case Duration:
-      </span>
-      <span className="text-slate-900 font-mono text-lg font-bold">
-        {formatTime(seconds)}
-      </span>
+      <span className="text-xs text-slate-400 mr-2 uppercase font-bold tracking-tighter">Case Duration:</span>
+      <span className="text-slate-900 font-mono text-lg font-bold">{formatTime(seconds)}</span>
     </div>
   );
 }
 
-// --- SUB-COMPONENT: The Interview Stage ---
+// --- COMPONENT: Graph Display Overlay ---
+function GraphOverlay({ 
+  imageUrl, 
+  prompt, 
+  onMinimize 
+}: { 
+  imageUrl: string; 
+  prompt: string;
+  onMinimize: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-300">
+        <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+          <div>
+            <h3 className="font-bold text-slate-900">Case Exhibit</h3>
+            <p className="text-sm text-slate-500">{prompt}</p>
+          </div>
+          <button 
+            onClick={onMinimize}
+            className="text-slate-400 hover:text-slate-600 transition-colors p-2 hover:bg-slate-100 rounded-lg"
+            title="Minimize"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </div>
+        <div className="p-6 bg-white">
+          <img 
+            src={imageUrl} 
+            alt="Case exhibit"
+            className="w-full h-auto rounded-lg border border-slate-200 shadow-sm"
+          />
+        </div>
+        <div className="bg-blue-50 border-t border-blue-100 px-6 py-3">
+          <p className="text-sm text-blue-700 text-center font-medium">
+            Describe what you observe in this exhibit to your interviewer
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- COMPONENT: Minimized Graph Button ---
+function MinimizedGraphButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="fixed bottom-24 right-8 bg-blue-600 text-white px-4 py-3 rounded-xl shadow-lg hover:bg-blue-700 transition-all flex items-center gap-2 z-40 animate-in slide-in-from-right duration-300 hover:scale-105"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg>
+      <span className="font-medium">View Exhibit</span>
+    </button>
+  );
+}
+
+// --- COMPONENT: Interview Stage ---
 function InterviewStage({ caseLabel }: { caseLabel: string }) {
   const [feedback, setFeedback] = useState<FeedbackData | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [graphData, setGraphData] = useState<{ image_url: string; display_prompt: string } | null>(null);
+  const [isGraphExpanded, setIsGraphExpanded] = useState(true);
 
   const tracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: true }]);
   const localTrack = tracks.find((t) => t.participant.isLocal);
 
-// --- DEBUG LISTENER (Replaces the block above) ---
   useDataChannel((payload) => {
     try {
       const text = new TextDecoder().decode(payload.payload);
-      console.log("🚀 RECEIVED DATA FROM PYTHON:", text); // <--- THIS LOG IS WHAT WE NEED
-
+      console.log("🚀 RECEIVED DATA FROM PYTHON:", text);
       const data = JSON.parse(text);
 
       if (data.type === "STATUS") {
         console.log("✅ STATUS RECEIVED: Generating...");
         setIsGenerating(true);
+      } else if (data.type === "SHOW_GRAPH") {
+        console.log("📊 GRAPH RECEIVED:", data);
+        setGraphData({ image_url: data.image_url, display_prompt: data.display_prompt });
+        setIsGraphExpanded(true);
+      } else if (data.type === "HIDE_GRAPH") {
+        setGraphData(null);
       } else if (data.score) {
         console.log("✅ REPORT CARD RECEIVED:", data);
         setIsGenerating(false);
@@ -134,16 +188,14 @@ function InterviewStage({ caseLabel }: { caseLabel: string }) {
     }
   });
 
-  // VIEW 1: SHOW FEEDBACK CARD (If feedback exists)
-  if (feedback) {
+if (feedback) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4 w-full">
+      <div className="flex flex-col items-center justify-start min-h-screen p-4 w-full overflow-y-auto">
         <FeedbackCard data={feedback} />
       </div>
     );
   }
 
-  // VIEW 2: SHOW LOADING (If Brian is thinking)
   if (isGenerating) {
     return (
       <div className="flex flex-col items-center justify-center h-64">
@@ -153,37 +205,42 @@ function InterviewStage({ caseLabel }: { caseLabel: string }) {
     );
   }
 
-  // VIEW 3: STANDARD INTERVIEW ROOM (Default)
   return (
     <div className="flex flex-col items-center justify-center w-full max-w-lg">
       <InterviewTimer />
       
+      {graphData && isGraphExpanded && (
+        <GraphOverlay 
+          imageUrl={graphData.image_url}
+          prompt={graphData.display_prompt}
+          onMinimize={() => setIsGraphExpanded(false)}
+        />
+      )}
+      
+      {graphData && !isGraphExpanded && (
+        <MinimizedGraphButton onClick={() => setIsGraphExpanded(true)} />
+      )}
+      
       <h1 className="text-3xl font-bold text-slate-900 mb-2 text-center tracking-tight">
         Ace Case Interview Room
       </h1>
-      <p className="text-slate-500 mb-12 text-center font-medium">
-        {caseLabel}
-      </p>
+      <p className="text-slate-500 mb-12 text-center font-medium">{caseLabel}</p>
       
-      {/* Central Circular Interface */}
       <div className="relative flex items-center justify-center h-64 w-64 mx-auto mb-12 bg-slate-100 rounded-full border border-slate-200 shadow-xl overflow-hidden ring-8 ring-white">
-        
         {localTrack && (
           <div className="absolute inset-0 w-full h-full">
             <VideoTrack trackRef={localTrack as any} />
           </div>
         )}
-
         <div className="relative z-10 w-full px-4">
           <BarVisualizer />
         </div>
       </div>
 
-      {/* Control Area */}
       <div className="flex flex-col items-center gap-4">
         <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 mb-2">
           <p className="text-xs font-bold text-amber-700 uppercase tracking-wide text-center">
-            It may take 5-10 seconds for the interviewer to load. Please do not turn on your mic until after the interviewer is finished introducing the case.
+            It may take 5-10 seconds for the interviewer to load at the beginning of the case.
           </p>
         </div>
         <div className="bg-white p-1 rounded-2xl border border-slate-200 shadow-lg">
@@ -197,7 +254,7 @@ function InterviewStage({ caseLabel }: { caseLabel: string }) {
   );
 }
 
-// --- MAIN PAGE COMPONENT ---
+// --- MAIN PAGE ---
 export default function InterviewPage() {
   const [token, setToken] = useState("");
   const [selectedCaseLabel, setSelectedCaseLabel] = useState("");
@@ -221,7 +278,6 @@ export default function InterviewPage() {
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-12">
         <h1 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">Welcome to Ace Case!</h1>
         <p className="text-slate-500 mb-12 font-medium">Choose an industry to begin your mock interview</p>
-        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
           {INDUSTRIES.map((ind) => (
             <button
