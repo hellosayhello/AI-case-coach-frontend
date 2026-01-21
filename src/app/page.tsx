@@ -15,12 +15,15 @@ import { useEffect, useState } from "react";
 
 // --- CONFIGURATION ---
 const INDUSTRIES = [
-  { name: "Sports", caseId: "phighting_phillies", label: "Phighting Phillies Due Diligence", source: "Wharton 2017 Casebook" },
-  { name: "Education", caseId: "kellogg_india", label: "Kellogg India Expansion", source: "Kellogg 2016 Casebook" },
-  { name: "Retail", caseId: "pharmacy_supermarket", label: "Supermarket Pharmacy Investment", source: "Sloan 2011 Casebook" },
-  { name: "CPG", caseId: "rotisserie_ranch", label: "Rotisserie Ranch Growth Strategy", source: "Kellogg 2016 Casebook" },
-  { name: "Arts", caseId: "art_museum", label: "NYC Art Museum Turnaround", source: "Sloan 2011 Casebook" },
-  { name: "Healthcare", caseId: "health_coaches", label: "Health Coaches Disease Management", source: "Kellogg 2016 Casebook" },
+  { name: "Sports", caseId: "phighting_phillies", label: "Phighting Phillies Due Diligence", source: "Wharton 2017 Casebook", difficulty: "Hard" },
+  { name: "Education", caseId: "kellogg_india", label: "Kellogg India Expansion", source: "Kellogg 2016 Casebook", difficulty: "Hard" },
+  { name: "Retail", caseId: "pharmacy_supermarket", label: "Supermarket Pharmacy Investment", source: "Sloan 2011 Casebook", difficulty: "Medium" },
+  { name: "CPG", caseId: "rotisserie_ranch", label: "Rotisserie Ranch Growth Strategy", source: "Kellogg 2016 Casebook", difficulty: "Medium" },
+  { name: "Arts", caseId: "art_museum", label: "NYC Art Museum Turnaround", source: "Sloan 2011 Casebook", difficulty: "Medium" },
+  { name: "Healthcare", caseId: "health_coaches", label: "Health Coaches Disease Management", source: "Kellogg 2016 Casebook", difficulty: "Hard" },
+  { name: "Media", caseId: "winter_olympics", label: "Winter Olympics Bidding", source: "Kellogg 2016 Casebook", difficulty: "Hard" },
+  { name: "Healthcare", caseId: "circling_the_drain", label: "Circling the Drain Hospital Profitability", source: "Wharton 2023 Casebook", difficulty: "Medium" },
+  { name: "CPG", caseId: "toothpaste_nascar", label: "Toothpaste Company NASCAR Sponsorship", source: "Sloan 2011 Casebook", difficulty: "Medium" },
 ];
 
 // --- INTERFACES ---
@@ -333,9 +336,10 @@ export default function InterviewPage() {
     }
   };
 
+  // Home page - case selection screen (scrollable)
   if (!token) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-12">
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-start py-12 px-12 overflow-y-auto">
         <h1 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">Welcome to Ace Case!</h1>
         <p className="text-slate-500 mb-12 font-medium">Choose an industry to begin your mock interview</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
@@ -345,9 +349,18 @@ export default function InterviewPage() {
               onClick={() => onSelectIndustry(ind.caseId, ind.label)}
               className="group p-8 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-blue-500 hover:shadow-md transition-all text-left"
             >
-              <p className="text-blue-500 text-xs font-bold uppercase mb-2 tracking-widest group-hover:text-blue-600">
-                {ind.name}
-              </p>
+              <div className="flex justify-between items-start mb-2">
+                <p className="text-blue-500 text-xs font-bold uppercase tracking-widest group-hover:text-blue-600">
+                  {ind.name}
+                </p>
+                <span className={`px-2 py-1 rounded text-xs font-bold ${
+                  ind.difficulty === 'Hard' ? 'bg-red-100 text-red-700' : 
+                  ind.difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-700' : 
+                  'bg-green-100 text-green-700'
+                }`}>
+                  {ind.difficulty}
+                </span>
+              </div>
               <h3 className="text-xl font-semibold text-slate-900">{ind.label}</h3>
               <p className="text-xs text-slate-400 mt-2">{ind.source}</p>
             </button>
@@ -357,6 +370,7 @@ export default function InterviewPage() {
     );
   }
 
+  // Interview room (scrollable)
   return (
     <LiveKitRoom
       video={false}
@@ -364,7 +378,7 @@ export default function InterviewPage() {
       token={token}
       serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
       data-lk-theme="light"
-      className="fixed inset-0 bg-slate-50 flex flex-col items-center justify-center p-4 overflow-hidden"
+      className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 overflow-y-auto"
     >
       <InterviewStage caseLabel={selectedCaseLabel} />
       <RoomAudioRenderer />
