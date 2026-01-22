@@ -25,6 +25,7 @@ const INDUSTRIES = [
   { name: "Healthcare", caseId: "circling_the_drain", label: "Circling the Drain Hospital Profitability", source: "Wharton 2023 Casebook", difficulty: "Hard" },
   { name: "CPG", caseId: "toothpaste_nascar", label: "Toothpaste Company NASCAR Sponsorship", source: "Sloan 2011 Casebook", difficulty: "Medium" },
   { name: "Industrials", caseId: "paper_company", label: "Paper Company Cost Reduction", source: "Yale 2013 Casebook", difficulty: "Medium" },
+  { name: "Industrials", caseId: "baby_helmets", label: "Baby Helmets Market Entry", source: "Yale 2013 Casebook", difficulty: "Medium" },
 ];
 
 // --- INTERFACES ---
