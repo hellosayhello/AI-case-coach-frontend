@@ -15,14 +15,14 @@ import { useEffect, useState } from "react";
 
 // --- CONFIGURATION ---
 const INDUSTRIES = [
-  { name: "Sports", caseId: "phighting_phillies", label: "Phighting Phillies Due Diligence", source: "Wharton 2017 Casebook", difficulty: "Hard" },
-  { name: "Education", caseId: "kellogg_india", label: "Kellogg India Expansion", source: "Kellogg 2016 Casebook", difficulty: "Hard" },
+  { name: "Sports", caseId: "phighting_phillies", label: "Phighting Phillies Due Diligence", source: "Wharton 2017 Casebook", difficulty: "Medium" },
+  { name: "Education", caseId: "kellogg_india", label: "Kellogg India Expansion", source: "Kellogg 2016 Casebook", difficulty: "Medium" },
   { name: "Retail", caseId: "pharmacy_supermarket", label: "Supermarket Pharmacy Investment", source: "Sloan 2011 Casebook", difficulty: "Medium" },
   { name: "CPG", caseId: "rotisserie_ranch", label: "Rotisserie Ranch Growth Strategy", source: "Kellogg 2016 Casebook", difficulty: "Medium" },
   { name: "Arts", caseId: "art_museum", label: "NYC Art Museum Turnaround", source: "Sloan 2011 Casebook", difficulty: "Medium" },
   { name: "Healthcare", caseId: "health_coaches", label: "Health Coaches Disease Management", source: "Kellogg 2016 Casebook", difficulty: "Hard" },
   { name: "Media", caseId: "winter_olympics", label: "Winter Olympics Bidding", source: "Kellogg 2016 Casebook", difficulty: "Hard" },
-  { name: "Healthcare", caseId: "circling_the_drain", label: "Circling the Drain Hospital Profitability", source: "Wharton 2023 Casebook", difficulty: "Medium" },
+  { name: "Healthcare", caseId: "circling_the_drain", label: "Circling the Drain Hospital Profitability", source: "Wharton 2023 Casebook", difficulty: "Hard" },
   { name: "CPG", caseId: "toothpaste_nascar", label: "Toothpaste Company NASCAR Sponsorship", source: "Sloan 2011 Casebook", difficulty: "Medium" },
 ];
 
