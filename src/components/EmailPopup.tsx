@@ -5,7 +5,8 @@ import { useState, useEffect } from "react";
 export default function EmailPopup() {
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [confirmEmail, setConfirmEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error" | "mismatch">("idle");
 
   useEffect(() => {
     const hasSubscribed = localStorage.getItem("hasSubscribed");
@@ -17,6 +18,13 @@ export default function EmailPopup() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if emails match
+    if (email !== confirmEmail) {
+      setStatus("mismatch");
+      return;
+    }
+    
     setStatus("loading");
 
     try {
@@ -28,7 +36,7 @@ export default function EmailPopup() {
 
       if (response.ok) {
         setStatus("success");
-        localStorage.setItem("hasSubscribed", "true");  // Only set after successful subscription
+        localStorage.setItem("hasSubscribed", "true");
         setTimeout(() => setIsOpen(false), 2000);
       } else {
         setStatus("error");
@@ -40,7 +48,6 @@ export default function EmailPopup() {
 
   const handleClose = () => {
     setIsOpen(false);
-    // Removed localStorage.setItem here - popup will show again next visit
   };
 
   if (!isOpen) return null;
@@ -60,7 +67,7 @@ export default function EmailPopup() {
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Stay Updated!</h2>
           <p className="text-slate-500">
-            Join our mailing list so that you never miss any new features or edits.
+            Join our mailing list to get updates on the latest new features and edits.
           </p>
         </div>
 
@@ -79,6 +86,14 @@ export default function EmailPopup() {
               required
               className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
+            <input
+              type="email"
+              value={confirmEmail}
+              onChange={(e) => setConfirmEmail(e.target.value)}
+              placeholder="Confirm your email"
+              required
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
             <button
               type="submit"
               disabled={status === "loading"}
@@ -86,6 +101,9 @@ export default function EmailPopup() {
             >
               {status === "loading" ? "Subscribing..." : "Subscribe"}
             </button>
+            {status === "mismatch" && (
+              <p className="text-red-500 text-sm text-center">Emails don&apos;t match. Please try again.</p>
+            )}
             {status === "error" && (
               <p className="text-red-500 text-sm text-center">Something went wrong. Please try again.</p>
             )}
