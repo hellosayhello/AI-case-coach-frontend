@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import path from "path";
+import { createClient } from "@supabase/supabase-js";
 
-const EMAILS_FILE = path.join(process.cwd(), "subscribers.json");
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export async function POST(request: Request) {
   try {
@@ -12,17 +14,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid email" }, { status: 400 });
     }
 
-    let emails: string[] = [];
-    try {
-      const data = await fs.readFile(EMAILS_FILE, "utf-8");
-      emails = JSON.parse(data);
-    } catch {
-      emails = [];
-    }
+    const { error } = await supabase
+      .from("subscribers")
+      .insert({ email });
 
-    if (!emails.includes(email)) {
-      emails.push(email);
-      await fs.writeFile(EMAILS_FILE, JSON.stringify(emails, null, 2));
+    if (error) {
+      // Duplicate email
+      if (error.code === "23505") {
+        return NextResponse.json({ success: true, message: "Already subscribed" });
+      }
+      console.error("Supabase error:", error);
+      return NextResponse.json({ error: "Failed to subscribe" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
