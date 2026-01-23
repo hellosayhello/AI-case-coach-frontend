@@ -345,7 +345,7 @@ export default function InterviewPage() {
     <div className="min-h-screen bg-slate-50 flex flex-col items-center py-12 px-12 overflow-auto">
       <EmailPopup />
       <h1 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">Welcome to Ace Case!</h1>
-      <p className="text-slate-500 mb-12 font-medium">Choose an industry to begin your mock interview</p>
+      <p className="text-slate-500 mb-12 font-medium">Choose a case to begin your mock interview</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl pb-12">
           {INDUSTRIES.map((ind) => (
             <button
